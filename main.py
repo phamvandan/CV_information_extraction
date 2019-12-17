@@ -45,12 +45,12 @@ def run(model, input_path, debug_images_path):
         path_to_text = text_recognition(model, graph, page_image, filename, debug_images_path)
         print(path_to_text)
 
-        # # Step 5: Text correction
-        # path_to_text_after_correction = text_correction(path_to_text)
+        # Step 5: Text correction
+        path_to_text_after_correction = text_correction(path_to_text)
 
 
-        # # Step 6: Text parsing
-        # cv_information = text_parsing(path_to_text_after_correction)
+        # Step 6: Text parsing
+        cv_information = text_parsing(path_to_text_after_correction)
 
 
 
