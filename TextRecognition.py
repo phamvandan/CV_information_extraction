@@ -179,27 +179,27 @@ def process_text_boxes_in_image(image, predicted_boxes, path_to_text):
     doc, textLineImage, textBoxImage = text_lines_detection(
         predicted_boxes, image_copy)
     line_number = 0
-    # text_file = open(path_to_text, "w+")
-    # for line in doc:
-    #     line_number += 1
-    #     line_text = ""
-    #     for word_box in line:
-    #         # origin image with box
-    #         # cv2.polylines(image,
-    #         #             [word_box.astype(np.int32).reshape((-1, 1, 2))],
-    #         #             True,
-    #         #             color=(0, 0, 255),
-    #         #             thickness=2)
-    #         word_box_text = four_point_transform(image, word_box)
-    #         config = "-l eng --psm 7 --oem 1"
-    #         text = pytesseract.image_to_string(word_box_text, config=config)
-    #         text = text.replace("\n", "")
-    #         line_text = line_text + " " + text
-    #     text_file.write(line_text + "\n")
-    # text_file.close()
+    text_file = open(path_to_text, "w+")
+    for line in doc:
+        line_number += 1
+        line_text = ""
+        for word_box in line:
+            # origin image with box
+            # cv2.polylines(image,
+            #             [word_box.astype(np.int32).reshape((-1, 1, 2))],
+            #             True,
+            #             color=(0, 0, 255),
+            #             thickness=2)
+            word_box_text = four_point_transform(image, word_box)
+            config = "-l eng --psm 7 --oem 1"
+            text = pytesseract.image_to_string(word_box_text, config=config)
+            text = text.replace("\n", "")
+            line_text = line_text + " " + text
+        text_file.write(line_text + "\n")
+    text_file.close()
     return image, path_to_text, textLineImage, textBoxImage
 
-
+# this function for text recognize
 def text_recognition(model, graph, page_image, filename, debug_images_path):
     predicted_boxes = textbox_detection(
         model, graph, page_image, filename, debug_images_path, True)
