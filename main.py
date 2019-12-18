@@ -29,6 +29,7 @@ def run(model, input_path, debug_images_path):
     for image_path, filename in input_path_list:
         # convert: akansa3@uic.edu Aniket Kansara.jpg -> akansa3@uic.edu Aniket Kansara
         filename = ".".join(filename.split(".")[:-1])
+        # make new folder
         folderName = filename
         debug_images_path = savePath
         debug_images_path = os.path.join(debug_images_path,folderName)
