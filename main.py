@@ -6,8 +6,8 @@ from TextDetection import textbox_detection
 from PageDetection import page_detection
 from TextDeskew import text_deskew
 from TextRecognition import text_recognition
-# from TextCorrection import text_correction
-# from TextParsing import text_parsing
+from TextCorrection import text_correction
+from TextParsing import text_parsing
 import tensorflow as tf
 
 
@@ -28,6 +28,10 @@ def run(model, input_path, debug_images_path):
     for image_path, filename in input_path_list:
         # convert: akansa3@uic.edu Aniket Kansara.jpg -> akansa3@uic.edu Aniket Kansara
         filename = ".".join(filename.split(".")[:-1])
+        folderName = filename
+        debug_images_path = os.path.join(debug_images_path,folderName)
+        if not os.path.isdir(debug_images_path):
+            os.mkdir(debug_images_path)
         image = cv2.imread(image_path)
         image_copy = np.copy(image)
 
@@ -45,12 +49,12 @@ def run(model, input_path, debug_images_path):
         path_to_text = text_recognition(model, graph, page_image, filename, debug_images_path)
         print(path_to_text)
 
-        # Step 5: Text correction
-        path_to_text_after_correction = text_correction(path_to_text)
+        # # Step 5: Text correction
+        # path_to_text_after_correction = text_correction(path_to_text)
 
 
-        # Step 6: Text parsing
-        cv_information = text_parsing(path_to_text_after_correction)
+        # # Step 6: Text parsing
+        # cv_information = text_parsing(path_to_text_after_correction)
 
 
 

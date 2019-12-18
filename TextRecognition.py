@@ -206,6 +206,6 @@ def text_recognition(model, graph, page_image, filename, debug_images_path):
     image, path_to_text, textLineImage, textBoxImage = process_text_boxes_in_image(
         page_image, predicted_boxes, os.path.join(debug_images_path, filename + "_4_recognition.txt"))
     cv2.imwrite(os.path.join(debug_images_path, filename +
-                             "4_text_lines.jpg"), textLineImage)
+                             "_4_text_lines.jpg"), textLineImage)
     # cv2.imwrite(os.path.join(debug_images_path,filename+"4_text_boxes.jpg"),textBoxImage)
     return path_to_text
