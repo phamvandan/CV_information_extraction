@@ -24,11 +24,12 @@ def run(model, input_path, debug_images_path):
     print('Predicting from test_images at path: {0}'.format(input_path))
 
     input_path_list = get_path_list(input_path)
-
+    # save the debug_images_path
+    savePath = debug_images_path
     for image_path, filename in input_path_list:
         # convert: akansa3@uic.edu Aniket Kansara.jpg -> akansa3@uic.edu Aniket Kansara
         filename = ".".join(filename.split(".")[:-1])
-        folderName = filename
+        debug_images_path = savePath
         debug_images_path = os.path.join(debug_images_path,folderName)
         if not os.path.isdir(debug_images_path):
             os.mkdir(debug_images_path)
