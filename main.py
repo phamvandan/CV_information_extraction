@@ -69,7 +69,7 @@ graph = tf.get_default_graph()
 debug_images_path = "./debug_images"
 
 
-# input_path = "./cv_images_data/full_data"
-input_path = "./cv_images_data/small_data"
+input_path = "./cv_images_data/full_data"
+# input_path = "./cv_images_data/small_data"
 
 run(model=rfb_text_model, input_path=input_path, debug_images_path=debug_images_path)
