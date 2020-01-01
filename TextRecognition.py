@@ -52,6 +52,9 @@ def drawBox(box, image):
                   color=(0, 0, 0),
                   thickness=2)
 
+def drawRectangle(box,image):
+    xmin,ymin,xmax,ymax = box
+    cv2.rectangle(image,(xmin,ymin),(xmax,ymax),(0,0,0),2)
 
 def yCondition(word1, word2, heightMean):
     (x11, y11) = (word1[0][0], word1[0][1])
@@ -163,6 +166,121 @@ def text_lines_detection(predicted_boxes, image):
                 break
     return afterTextLines, image, image_copy
 
+def assignCoordinate(entireBox,newBox):
+    xmin,ymin,xmax,ymax = entireBox
+    x1,y1 = newBox[0]
+    x2,y2 = newBox[1]
+    x3,y3 = newBox[2]
+    x4,y4 = newBox[3]
+    if x1<xmin:
+        xmin = x1
+    elif x4<xmin:
+        xmin = x4
+    if y1<ymin:
+        ymin = y1 
+    elif y2<ymin:
+        ymin = y2
+    if x2>xmax:
+        xmax = x2
+    elif x4>xmax:
+        xmax = x4
+    if y3 > ymax:
+        ymax = y3
+    elif y4>ymax:
+        ymax = y4
+    entireBox = (xmin,ymin,xmax,ymax)
+    return entireBox
+
+def extendEntireBox(entireBox,width,height,ratio):
+    xmin,ymin,xmax,ymax = entireBox
+    print("DELTA")
+    deltaX= width//ratio
+    xmin = int(max(xmin - deltaX,0))
+    xmax = int(min(xmax + deltaX,width))
+    entireBox = (xmin,ymin,xmax,ymax)
+    print(str(deltaX))
+    return entireBox
+
+def text_lines_detection_version2(predicted_boxes, image):
+    (h,w) = image.shape[:2]
+    preTextLines = []
+    afterTextLines = []
+    afterTextEntireLines = []
+    widthMean = caculateAvergeWidth(predicted_boxes)
+    heightMean = caculateAvergeHeight(predicted_boxes)
+    print("averge width: "+str(widthMean))
+    print("averge height: "+str(heightMean))
+    image_copy = image.copy()
+    for box in predicted_boxes:
+        preTextLines.append(box)
+        drawBox(box, image_copy)
+    lineNumber = -1
+    # sort follow y coordinate
+    preTextLines = sorted(preTextLines, key=lambda x: x[0][1])
+    while len(preTextLines) > 0:
+        # choose candidate
+        word = preTextLines.pop(0)
+        drawBox(word, image)
+        temp = word
+        afterTextLines.append([word])
+        lineNumber = lineNumber + 1
+        # assign
+        xmin = word[0][0]
+        ymin = word[0][1]
+        xmax = word[1][0]
+        ymax = word[1][1]
+        entireBox = (xmin,ymin,xmax,ymax)
+        entireBox = assignCoordinate(entireBox,word)
+        # find right candidates
+        while True:
+            candidates = []
+            for index, candidate in enumerate(preTextLines):
+                if candidate[0][0] > word[0][0] and isGoodAngle(word[0],candidate[0]) and yCondition(candidate, word, heightMean):
+                    candidates.append((index, candidate))
+            minDistace = 10000
+            minCandidateIndex = None
+            for index, candidate in candidates:
+                distance = candidate[0][0] - word[2][0]
+                if distance >= 2*widthMean:
+                    continue
+                if distance < minDistace:
+                    minCandidateIndex = index
+                    minDistace = distance
+            if minCandidateIndex is not None:
+                candidate = preTextLines.pop(minCandidateIndex)
+                afterTextLines[lineNumber].append(candidate)
+                entireBox = assignCoordinate(entireBox,candidate)
+                drawArrow(word, candidate, image, (0, 0, 255))
+                word = candidate
+            else:
+                break
+        # find left candidates
+        word = temp
+        while True:
+            candidates = []
+            for index, candidate in enumerate(preTextLines):
+                if word[0][0] > candidate[0][0] and isGoodAngle(word[0],candidate[0]) and yCondition(candidate, word, heightMean):
+                    candidates.append((index, candidate))
+            minDistace = 10000
+            minCandidateIndex = None
+            for index, candidate in candidates:
+                distance = word[0][0] - candidate[2][0]
+                if distance >= 2*widthMean:
+                    continue
+                if distance < minDistace:
+                    minCandidateIndex = index
+                    minDistace = distance
+            if minCandidateIndex is not None:
+                candidate = preTextLines.pop(minCandidateIndex)
+                afterTextLines[lineNumber].insert(0, candidate)
+                entireBox = assignCoordinate(entireBox,candidate)
+                drawArrow(word, candidate, image, (0, 255, 0))
+                word = candidate
+            else:
+                break
+        entireBox = extendEntireBox(entireBox,w,h,55)
+        afterTextEntireLines.append(entireBox)
+    return afterTextLines, image, image_copy,afterTextEntireLines
 
 def process_text_boxes_in_image(image, predicted_boxes, path_to_text):
     """
@@ -176,26 +294,28 @@ def process_text_boxes_in_image(image, predicted_boxes, path_to_text):
     image_copy = image.copy()
     for index, box in enumerate(predicted_boxes):
         predicted_boxes[index] = order_points(box)
-    doc, textLineImage, textBoxImage = text_lines_detection(
+    doc, textLineImage, textBoxImage,afterTextEntireLines= text_lines_detection_version2(
         predicted_boxes, image_copy)
+    for box in afterTextEntireLines:
+        drawRectangle(box,textLineImage)
     line_number = 0
     text_file = open(path_to_text, "w+")
-    for line in doc:
-        line_number += 1
-        line_text = ""
-        for word_box in line:
-            # origin image with box
-            # cv2.polylines(image,
-            #             [word_box.astype(np.int32).reshape((-1, 1, 2))],
-            #             True,
-            #             color=(0, 0, 255),
-            #             thickness=2)
-            word_box_text = four_point_transform(image, word_box)
-            config = "-l eng --psm 7 --oem 1"
-            text = pytesseract.image_to_string(word_box_text, config=config)
-            text = text.replace("\n", "")
-            line_text = line_text + " " + text
-        text_file.write(line_text + "\n")
+    # for line in doc:
+    #     line_number += 1
+    line_text = ""
+    for word_box_text in afterTextEntireLines:
+        # origin image with box
+        # cv2.polylines(image,
+        #             [word_box.astype(np.int32).reshape((-1, 1, 2))],
+        #             True,
+        #             color=(0, 0, 255),
+        #             thickness=2)
+        # word_box_text = four_point_transform(image, word_box)
+        config = "-l eng --psm 7 --oem 1"
+        line_text = pytesseract.image_to_string(word_box_text, config=config)
+        # text = text.replace("\n", "")
+        # line_text = line_text + " " + text
+        text_file.write(line_text)
     text_file.close()
     return image, path_to_text, textLineImage, textBoxImage
 

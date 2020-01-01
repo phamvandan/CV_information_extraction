@@ -6,8 +6,8 @@ from TextDetection import textbox_detection
 from PageDetection import page_detection
 from TextDeskew import text_deskew
 from TextRecognition import text_recognition
-# from TextCorrection import text_correction
-# from TextParsing import text_parsing
+from TextCorrection import text_correction
+from TextParsing import text_parsing
 import tensorflow as tf
 
 
