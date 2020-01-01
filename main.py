@@ -24,10 +24,17 @@ def run(model, input_path, debug_images_path):
     print('Predicting from test_images at path: {0}'.format(input_path))
 
     input_path_list = get_path_list(input_path)
-
+    # save the debug_images_path
+    savePath = debug_images_path
     for image_path, filename in input_path_list:
         # convert: akansa3@uic.edu Aniket Kansara.jpg -> akansa3@uic.edu Aniket Kansara
         filename = ".".join(filename.split(".")[:-1])
+        # make new folder in the debug_images_path
+        folderName = filename
+        debug_images_path = savePath
+        debug_images_path = os.path.join(debug_images_path,folderName)
+        if not os.path.isdir(debug_images_path):
+            os.mkdir(debug_images_path)
         image = cv2.imread(image_path)
         image_copy = np.copy(image)
 
@@ -45,12 +52,12 @@ def run(model, input_path, debug_images_path):
         path_to_text = text_recognition(model, graph, page_image, filename, debug_images_path)
         print(path_to_text)
 
-        # Step 5: Text correction
-        path_to_text_after_correction = text_correction(path_to_text)
+        # # Step 5: Text correction
+        # path_to_text_after_correction = text_correction(path_to_text)
 
 
-        # Step 6: Text parsing
-        cv_information = text_parsing(path_to_text_after_correction)
+        # # Step 6: Text parsing
+        # cv_information = text_parsing(path_to_text_after_correction)
 
 
 
@@ -62,7 +69,7 @@ graph = tf.get_default_graph()
 debug_images_path = "./debug_images"
 
 
-# input_path = "./cv_images_data/full_data"
-input_path = "./cv_images_data/small_data"
+input_path = "./cv_images_data/full_data"
+# input_path = "./cv_images_data/small_data"
 
 run(model=rfb_text_model, input_path=input_path, debug_images_path=debug_images_path)
