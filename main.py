@@ -53,11 +53,11 @@ def run(model, input_path, debug_images_path):
         print(path_to_text)
 
         # # Step 5: Text correction
-        # path_to_text_after_correction = text_correction(path_to_text)
+        path_to_text_after_correction = text_correction(path_to_text)
 
 
         # # Step 6: Text parsing
-        # cv_information = text_parsing(path_to_text_after_correction)
+        cv_information = text_parsing(path_to_text_after_correction)
 
 
 
