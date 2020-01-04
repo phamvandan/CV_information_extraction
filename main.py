@@ -6,8 +6,8 @@ from TextDetection import textbox_detection
 from PageDetection import page_detection
 from TextDeskew import text_deskew
 from TextRecognition import text_recognition
-# from TextCorrection import text_correction
-# from TextParsing import text_parsing
+from TextCorrection import text_correction
+from TextParsing import text_parsing
 import tensorflow as tf
 
 
@@ -53,11 +53,11 @@ def run(model, input_path, debug_images_path):
         print(path_to_text)
 
         # # Step 5: Text correction
-        # path_to_text_after_correction = text_correction(path_to_text)
+        path_to_text_after_correction = text_correction(path_to_text)
 
 
         # # Step 6: Text parsing
-        # cv_information = text_parsing(path_to_text_after_correction)
+        cv_information = text_parsing(path_to_text_after_correction)
 
 
 
@@ -69,7 +69,7 @@ graph = tf.get_default_graph()
 debug_images_path = "./debug_images"
 
 
-# input_path = "./cv_images_data/full_data"
-input_path = "./cv_images_data/small_data"
+input_path = "./cv_images_data/full_data"
+# input_path = "./cv_images_data/small_data"
 
 run(model=rfb_text_model, input_path=input_path, debug_images_path=debug_images_path)
