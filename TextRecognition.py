@@ -210,6 +210,99 @@ def extendEntireBox(entireBox,width,height,ratio):
     print(str(deltaX))
     return entireBox
 
+import  math
+def caculateAngleOfBox(pt1,pt2):
+    x1,y1 = pt1
+    x2,y2 = pt2
+    if x1>=x2:
+        return None
+    angle = math.atan(float(float(y1-y2)/float(abs(x1-x2))))
+    # print(angle)
+    return angle
+
+def standardPoint(pt,h,w):
+    x,y = pt
+    if x<=0:
+        x = 0
+    elif x >= w:
+        x = w
+    if y<= 0:
+        y=0
+    elif y>=h:
+        y=h
+    pt = (round(x),round(y))
+    return pt
+
+def extendLine(pt1,pt2,delta,w,h):
+    swap = False
+    if pt1[0] > pt2[0]:
+        temp = pt1
+        pt1 = pt2
+        pt2 = temp
+        swap = True
+    pt1 = standardPoint(pt1,h,w)
+    pt2 = standardPoint(pt2,h,w)
+    x1,y1 = pt1
+    x2,y2 = pt2
+    angle = caculateAngleOfBox(pt1,pt2)
+    x_1 = x1
+    y_1 = y1
+    x_2 = x2
+    y_2 = y2
+    if angle is None:
+        return pt1,pt2
+    else:
+        leftAngle = angle
+        rightAngle = 0 - angle
+        x_1 = round(x1 - delta)
+        y_1 = round(y1 + delta*math.tan(leftAngle))
+        if x_1 <0 or x_1>w or y_1<0 or y_1>h:
+            (x_1,y_1) = standardPoint((x_1,y_1),h,w)
+        x_2 = round(x2 + delta)
+        y_2 = round(y2 + delta*math.tan(rightAngle))
+        if x_2 <0 or x_2>w or y_2<0 or y_2>h:
+            (x_2,y_2) = standardPoint((x_2,y_2),h,w)
+    expt1 = (x_1,y_1)
+    expt2 = (x_2,y_2)
+    if swap:
+        temp = expt1
+        expt1 = expt2
+        expt2 = temp
+    return expt1,expt2
+
+def printBox(box):
+    print(box)
+    print(type(box))
+
+# def drawBox(box,img):
+#     cv2.drawContours(img, [box], 0, 255, 2)
+
+def Swap(a,b):
+    c = a
+    a = b
+    b = c
+
+def processBox(box):
+    box = sorted(box,key=lambda x: x[0])
+    pt1 = None
+    pt2 = None
+    pt3 = None 
+    pt4 = None
+    if box[0][1] > box[1][1]:
+        pt1 = box[1]
+        pt4 = box[0]
+    else:
+        pt1 = box[0]
+        pt4 = box[1]
+    if box[2][1] > box[3][1]:
+        pt2 = box[3]
+        pt3 = box[2]
+    else:
+        pt2 = box[2]
+        pt3 = box[3]
+    box = np.array([pt1,pt2,pt3,pt4],dtype='int')
+    return box
+
 def text_lines_detection_version2(predicted_boxes, image):
     mask = image.shape[:2]
     (h,w) = image.shape[:2]
@@ -293,6 +386,7 @@ def text_lines_detection_version2(predicted_boxes, image):
     return afterTextLines, image, image_copy,afterTextEntireLines
 
 def text_lines_detection_version3(predicted_boxes, image):
+    (h,w) = image.shape[:2]
     mask = np.zeros(image.shape[:2])
     preTextLines = []
     afterTextLines = []
@@ -381,6 +475,13 @@ def text_lines_detection_version3(predicted_boxes, image):
         box = np.int0(box)
         cv2.drawContours(mask, [box], 0, 255, 2)
         cv2.drawContours(image_copy, [box], 0, (0,0,0), 2)
+        box = processBox(box)
+        extendDelta = abs(box[1][1]-box[2][1])
+        print(extendDelta)
+        box[0],box[1] = extendLine(box[0],box[1],extendDelta,w,h)
+        box[2],box[3] = extendLine(box[2],box[3],extendDelta,w,h)
+        cv2.drawContours(mask, [box], 0, 255, 2)
+        cv2.drawContours(image_copy, [box], 0, (255,0,0), 2)
         afterTextEntireLines.append(box)
     # mask = cv2.resize(mask,(800,800))
     # cv2.imshow("ok",mask)
