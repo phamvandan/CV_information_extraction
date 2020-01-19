@@ -432,8 +432,8 @@ def extendBoxAdvance(image,oldbox,itr=8):
     # cv2.waitKey(0)
     return left_delta,right_delta
 
-def text_lines_detection_version3(predicted_boxes, image):
-    name = 1
+def text_lines_detection_version3(predicted_boxes, image,optional=True):
+    # name = 1
     (h,w) = image.shape[:2]
     mask = np.zeros(image.shape[:2])
     preTextLines = []
@@ -529,15 +529,16 @@ def text_lines_detection_version3(predicted_boxes, image):
         left_delta = w
         right_delta = w
         oldbox = box.copy()
-        box[0],box[1] = extendLine(box[0],box[1],left_delta,right_delta,w,h)
-        box[2],box[3] = extendLine(box[2],box[3],left_delta,right_delta,w,h)
-        cutimage = four_point_transform(image_copy_2, box)
-        cutimage[:,min(oldbox[0][0],oldbox[3][0]):max(oldbox[1][0],oldbox[2][0])]=255
-        cv2.imwrite(str(name)+".jpg",cutimage)
-        name = name + 1
-        left_delta,right_delta = extendBoxAdvance(cutimage,oldbox)
-        oldbox[0],oldbox[1] = extendLine(oldbox[0],oldbox[1],left_delta,right_delta,w,h)
-        oldbox[2],oldbox[3] = extendLine(oldbox[2],oldbox[3],left_delta,right_delta,w,h)
+        if optional:
+            box[0],box[1] = extendLine(box[0],box[1],left_delta,right_delta,w,h)
+            box[2],box[3] = extendLine(box[2],box[3],left_delta,right_delta,w,h)
+            cutimage = four_point_transform(image_copy_2, box)
+            cutimage[:,min(oldbox[0][0],oldbox[3][0]):max(oldbox[1][0],oldbox[2][0])]=255
+            # cv2.imwrite(str(name)+".jpg",cutimage)
+            # name = name + 1
+            left_delta,right_delta = extendBoxAdvance(cutimage,oldbox)
+            oldbox[0],oldbox[1] = extendLine(oldbox[0],oldbox[1],left_delta,right_delta,w,h)
+            oldbox[2],oldbox[3] = extendLine(oldbox[2],oldbox[3],left_delta,right_delta,w,h)
         cv2.drawContours(mask, [oldbox], 0, 255, 2)
         cv2.drawContours(image_copy, [oldbox], 0, (255,0,0), 2)
         afterTextEntireLines.append(oldbox)
