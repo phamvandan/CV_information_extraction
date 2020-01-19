@@ -53,11 +53,11 @@ def drawArrow(word1, word2, image, color,mask):
     # cv2.waitKey(0)
 
 
-def drawBox(box, image):
+def drawBox(box, image,color=(0,0,0)):
     cv2.polylines(image,
                   [box.astype(np.int32).reshape((-1, 1, 2))],
                   True,
-                  color=(0, 0, 0),
+                  color=color,
                   thickness=2)
 
 def drawRectangle(box,image):
@@ -210,6 +210,7 @@ def extendEntireBox(entireBox,width,height,ratio):
     print(str(deltaX))
     return entireBox
 
+
 import  math
 def caculateAngleOfBox(pt1,pt2):
     x1,y1 = pt1
@@ -233,7 +234,7 @@ def standardPoint(pt,h,w):
     pt = (round(x),round(y))
     return pt
 
-def extendLine(pt1,pt2,delta,w,h):
+def extendLine(pt1,pt2,left_delta,right_delta,w,h):
     swap = False
     if pt1[0] > pt2[0]:
         temp = pt1
@@ -244,6 +245,10 @@ def extendLine(pt1,pt2,delta,w,h):
     pt2 = standardPoint(pt2,h,w)
     x1,y1 = pt1
     x2,y2 = pt2
+    if w <= x2 + right_delta:
+        right_delta = w-x2
+    if 0 >= x1 - left_delta:
+        left_delta = x1
     angle = caculateAngleOfBox(pt1,pt2)
     x_1 = x1
     y_1 = y1
@@ -254,12 +259,14 @@ def extendLine(pt1,pt2,delta,w,h):
     else:
         leftAngle = angle
         rightAngle = 0 - angle
-        x_1 = round(x1 - delta)
-        y_1 = round(y1 + delta*math.tan(leftAngle))
+        delta = x1
+        x_1 = round(x1 - left_delta)
+        y_1 = round(y1 + left_delta*math.tan(leftAngle))
         if x_1 <0 or x_1>w or y_1<0 or y_1>h:
             (x_1,y_1) = standardPoint((x_1,y_1),h,w)
-        x_2 = round(x2 + delta)
-        y_2 = round(y2 + delta*math.tan(rightAngle))
+        delta = w-x2
+        x_2 = round(x2 + right_delta)
+        y_2 = round(y2 + right_delta*math.tan(rightAngle))
         if x_2 <0 or x_2>w or y_2<0 or y_2>h:
             (x_2,y_2) = standardPoint((x_2,y_2),h,w)
     expt1 = (x_1,y_1)
@@ -385,7 +392,48 @@ def text_lines_detection_version2(predicted_boxes, image):
         afterTextEntireLines.append(entireBox)
     return afterTextLines, image, image_copy,afterTextEntireLines
 
+def printImage(image,name="ok"):
+    cv2.imshow(name,image)
+    key  = cv2.waitKey(0)
+    if key == ord('q'):
+        return 1
+    return 0
+
+def extendBoxAdvance(image,oldbox,itr=8):
+    origin = image.copy()
+    left = min(oldbox[0][0],oldbox[3][0])
+    right = max(oldbox[1][0],oldbox[2][0])
+    left_delta = 0
+    right_delta = 0
+    x_right = right
+    image = cv2.cvtColor(image.copy(),cv2.COLOR_RGB2GRAY)
+    (h,w) = image.shape[:2]
+    kernel = np.ones((5,5), np.uint8) 
+    image = cv2.erode(image, kernel, iterations=itr)
+    # ret3,image= cv2.threshold(image,0,255,cv2.THRESH_OTSU)
+    ret3,image= cv2.threshold(image,150,255,cv2.THRESH_BINARY)
+    image = cv2.copyMakeBorder(image, 10, 10, 10, 10, cv2.BORDER_CONSTANT,None, 255)
+    (_, conts, _) = cv2.findContours(image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    for cnt in conts:
+        box = cv2.boundingRect(cnt)
+        (x,y,w,h) = box
+        # print(box)
+        if x==0 and y==0:
+            continue
+        x = x - 10
+        y = y - 10
+        if x <= left and x + w>= left:
+            left_delta = abs(x-left)
+            cv2.rectangle(origin,(x,y),(x+w,y+h),100,3)
+        if x <= right and x + w >= right:
+            right_delta = abs(x+w-right)
+            cv2.rectangle(origin,(x,y),(x+w,y+h),100,3)
+    # cv2.imshow("origin",origin)
+    # cv2.waitKey(0)
+    return left_delta,right_delta
+
 def text_lines_detection_version3(predicted_boxes, image):
+    name = 1
     (h,w) = image.shape[:2]
     mask = np.zeros(image.shape[:2])
     preTextLines = []
@@ -396,6 +444,7 @@ def text_lines_detection_version3(predicted_boxes, image):
     print("averge width: "+str(widthMean))
     print("averge height: "+str(heightMean))
     image_copy = image.copy()
+    image_copy_2 = image.copy()
     for box in predicted_boxes:
         preTextLines.append(box)
         # drawBox(box, image_copy)
@@ -476,17 +525,27 @@ def text_lines_detection_version3(predicted_boxes, image):
         cv2.drawContours(mask, [box], 0, 255, 2)
         cv2.drawContours(image_copy, [box], 0, (0,0,0), 2)
         box = processBox(box)
-        extendDelta = abs(box[1][1]-box[2][1])
-        print(extendDelta)
-        box[0],box[1] = extendLine(box[0],box[1],extendDelta,w,h)
-        box[2],box[3] = extendLine(box[2],box[3],extendDelta,w,h)
-        cv2.drawContours(mask, [box], 0, 255, 2)
-        cv2.drawContours(image_copy, [box], 0, (255,0,0), 2)
-        afterTextEntireLines.append(box)
+        # extendDelta = abs(box[1][1]-box[2][1])
+        left_delta = w
+        right_delta = w
+        oldbox = box.copy()
+        box[0],box[1] = extendLine(box[0],box[1],left_delta,right_delta,w,h)
+        box[2],box[3] = extendLine(box[2],box[3],left_delta,right_delta,w,h)
+        cutimage = four_point_transform(image_copy_2, box)
+        cutimage[:,min(oldbox[0][0],oldbox[3][0]):max(oldbox[1][0],oldbox[2][0])]=255
+        cv2.imwrite(str(name)+".jpg",cutimage)
+        name = name + 1
+        left_delta,right_delta = extendBoxAdvance(cutimage,oldbox)
+        oldbox[0],oldbox[1] = extendLine(oldbox[0],oldbox[1],left_delta,right_delta,w,h)
+        oldbox[2],oldbox[3] = extendLine(oldbox[2],oldbox[3],left_delta,right_delta,w,h)
+        cv2.drawContours(mask, [oldbox], 0, 255, 2)
+        cv2.drawContours(image_copy, [oldbox], 0, (255,0,0), 2)
+        afterTextEntireLines.append(oldbox)
     # mask = cv2.resize(mask,(800,800))
     # cv2.imshow("ok",mask)
     # cv2.waitKey(0)
     return afterTextLines, image, image_copy,mask,afterTextEntireLines
+
 
 def process_text_boxes_in_image(image, predicted_boxes, path_to_text):
     """
@@ -498,17 +557,16 @@ def process_text_boxes_in_image(image, predicted_boxes, path_to_text):
     :return:
     """
     image_copy = image.copy()
+    image_copy_2 = image.copy()
     for index, box in enumerate(predicted_boxes):
         predicted_boxes[index] = order_points(box)
     doc, textLineImage, textBoxImage,mask,afterTextEntireLines = text_lines_detection_version3(
         predicted_boxes, image_copy)
-    # for box in afterTextEntireLines:
-        # drawRectangle(box,textLineImage)
-    line_number = 0
+    # line_number = 0
     text_file = open(path_to_text, "w+")
-    # # for line in doc:
-    # #     line_number += 1
-    # line_text = ""
+    # for line in doc:
+    #     line_number += 1
+    line_text = ""
     for word_box in afterTextEntireLines:
         # origin image with box
         # cv2.polylines(image,
