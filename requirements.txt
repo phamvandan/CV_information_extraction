@@ -35,7 +35,7 @@ murmurhash==1.0.2
 nltk==3.4.5
 numpy==1.17.3
 olefile==0.46
-opencv-contrib-python==4.0.0.21
+opencv-contrib-python==4.1.1.26
 pandas==0.25.3
 pdfminer.six==20181108
 Pillow==6.2.1
